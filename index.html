@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>svoidsapexfx — Apex Legends overlays &amp; stream FX</title>
+<meta name="description" content="Live Apex Legends rank overlays and event-triggered stream effects for OBS. Built for streamers. No injection, no game memory, no ban risk.">
+
+<!-- Open Graph / social preview -->
+<meta property="og:title" content="svoidsapexfx — Apex Legends overlays &amp; stream FX">
+<meta property="og:description" content="Live Apex Legends rank overlays and event-triggered stream effects for OBS.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://svoidsapexfx.com/">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@400;500;600;700&family=Saira+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* =================================================================
+   svoidsapexfx.com
+   Single-page site. No build step, no dependencies beyond the fonts.
+   The palette and panel shapes deliberately match the rank overlay
+   itself, so the site and the product look like one thing.
+   ================================================================= */
+
+:root {
+  /* re-themed live by the demo widget, same as the real overlay */
+  --accent: #da292a;
+  --accent-rgb: 218 41 42;
+  --accent-lt: #f07a6d;
+  --accent-dim: #8f1d1e;
+
+  --bg: #0a0c0f;
+  --bg-2: #0d1014;
+  --panel-a: #14181d;
+  --panel-b: #0f1216;
+  --line: #23282f;
+  --line-soft: #1e2329;
+
+  --text: #f4f5f6;
+  --text-2: #b9c0c8;
+  --text-3: #8d949c;
+  --text-4: #6f767e;
+
+  --display: 'Teko', 'Oswald', 'Arial Narrow', sans-serif;
+  --ui: 'Saira Condensed', 'Roboto Condensed', system-ui, sans-serif;
+
+  --wrap: 1080px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--ui);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+a { color: var(--accent-lt); }
+
+.wrap { width: 100%; max-width: var(--wrap); margin: 0 auto; padding: 0 22px; }
+
+h1, h2, h3 {
+  font-family: var(--display);
+  font-weight: 600;
+  line-height: .95;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* ---------------- nav ---------------- */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(10, 12, 15, .82);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line-soft);
+}
+.nav .wrap {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  height: 62px;
+}
+.brand {
+  font-family: var(--display);
+  font-size: 27px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: lowercase;
+  color: var(--text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.brand span { color: var(--accent); }
+.nav nav { margin-left: auto; display: flex; gap: 22px; }
+.nav nav a {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color: var(--text-3);
+  text-decoration: none;
+}
+.nav nav a:hover { color: var(--text); }
+
+/* ---------------- buttons ---------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  font-family: var(--ui);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  padding: 13px 26px;
+  border: 0;
+  border-radius: 3px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: filter .18s ease, transform .12s ease;
+}
+.btn:hover { filter: brightness(1.15); }
+.btn:active { transform: translateY(1px); }
+.btn.primary { background: var(--accent); color: #fff; box-shadow: 0 0 22px rgba(var(--accent-rgb) / .3); }
+.btn.ghost { background: #1d222a; color: #cfd5dc; border: 1px solid #303740; }
+.btn-row { display: flex; flex-wrap: wrap; gap: 12px; }
+
+/* ---------------- panels ---------------- */
+.panel {
+  background: linear-gradient(140deg, var(--panel-a), var(--panel-b));
+  border: 1px solid var(--line);
+  clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px);
+  padding: 26px 28px;
+}
+
+/* ---------------- hero ---------------- */
+.hero {
+  position: relative;
+  padding: 76px 0 64px;
+  border-bottom: 1px solid var(--line-soft);
+  overflow: hidden;
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: -40% 40% 40% -20%;
+  background: radial-gradient(closest-side, rgba(var(--accent-rgb) / .16), transparent);
+  pointer-events: none;
+  transition: background .8s ease;
+}
+.hero .wrap { position: relative; }
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1fr minmax(0, 520px);
+  gap: 54px;
+  align-items: center;
+}
+.hero h1 {
+  font-size: clamp(46px, 7vw, 82px);
+  margin: 14px 0 0;
+}
+.hero h1 em {
+  font-style: normal;
+  color: var(--accent);
+  transition: color .8s ease;
+}
+.hero .lede {
+  font-size: 17.5px;
+  color: var(--text-2);
+  margin-top: 18px;
+  max-width: 46ch;
+}
+.hero .btn-row { margin-top: 28px; }
+.hero .under {
+  margin-top: 16px;
+  font-size: 13.5px;
+  color: var(--text-4);
+}
+
+/* ---------------- live demo widget ---------------- */
+.demo-stage {
+  position: relative;
+  padding: 26px 22px 20px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background:
+    linear-gradient(rgba(10,12,15,.55), rgba(10,12,15,.72)),
+    repeating-linear-gradient(115deg, #1a2029 0 12px, #151a22 12px 24px);
+}
+.demo-stage .tag {
+  position: absolute;
+  top: -10px;
+  left: 16px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-3);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 2px 9px;
+}
+.demo-stage .caption {
+  margin-top: 14px;
+  font-size: 12.5px;
+  color: var(--text-4);
+  text-align: center;
+}
+
+/* the widget itself — a compact restatement of the real overlay */
+.widget {
+  position: relative;
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  gap: 15px;
+  align-items: center;
+  padding: 14px 18px 14px 14px;
+  background: linear-gradient(100deg, rgba(10,12,15,.62), rgba(24,28,34,.62));
+  border-left: 3px solid var(--accent);
+  border-radius: 3px;
+  box-shadow: 0 0 30px rgba(var(--accent-rgb) / .16);
+  transition: border-color .7s ease, box-shadow .7s ease;
+}
+.widget.flash { animation: flash .7s ease; }
+@keyframes flash {
+  0%   { box-shadow: 0 0 0 rgba(var(--accent-rgb) / 0); }
+  22%  { box-shadow: 0 0 46px rgba(var(--accent-rgb) / .62); }
+  100% { box-shadow: 0 0 30px rgba(var(--accent-rgb) / .16); }
+}
+.badge {
+  display: grid;
+  place-items: center;
+  height: 66px;
+  border-radius: 3px;
+  background: rgba(var(--accent-rgb) / .12);
+  border: 1px solid rgba(var(--accent-rgb) / .4);
+  transition: background .7s ease, border-color .7s ease;
+}
+.badge .glyph {
+  font-family: var(--display);
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent-lt);
+  transition: color .7s ease;
+}
+.player {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #5ce08a;
+  animation: pulse 1.9s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .28; } }
+.rank-name {
+  font-family: var(--display);
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-top: 1px;
+}
+.rank-name .div { color: var(--accent-lt); margin-left: 7px; transition: color .7s ease; }
+.rp-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 4px;
+}
+.rp-current { font-family: var(--display); font-size: 25px; line-height: 1; }
+.rp-current .unit { font-family: var(--ui); font-size: 12px; color: var(--text-3); margin-left: 4px; letter-spacing: 1px; }
+.delta {
+  font-family: var(--ui);
+  font-size: 12px;
+  font-weight: 600;
+  color: #5ce08a;
+  margin-left: 8px;
+  opacity: 0;
+  transition: opacity .4s ease;
+}
+.delta.on { opacity: 1; }
+.rp-needed {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color: var(--text-3);
+  text-align: right;
+}
+.bar {
+  position: relative;
+  height: 5px;
+  margin-top: 9px;
+  background: rgba(255,255,255,.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-dim), var(--accent), var(--accent-lt));
+  border-radius: 3px;
+  transition: width .55s cubic-bezier(.22,.9,.3,1), background .7s ease;
+}
+
+/* ---------------- sections ---------------- */
+section { padding: 74px 0; border-bottom: 1px solid var(--line-soft); }
+.sec-head { max-width: 62ch; margin-bottom: 34px; }
+.sec-head h2 { font-size: clamp(32px, 4.4vw, 46px); margin: 10px 0 0; }
+.sec-head p { color: var(--text-2); margin-top: 12px; font-size: 16.5px; }
+
+/* product card */
+.product {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 34px;
+  align-items: start;
+}
+.product h3 { font-size: 32px; }
+.status {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 2px;
+  vertical-align: middle;
+  margin-left: 10px;
+}
+.status.live { background: rgba(92,224,138,.12); border: 1px solid rgba(92,224,138,.4); color: #8fe8ac; }
+.status.soon { background: rgba(255,176,46,.1); border: 1px solid rgba(255,176,46,.34); color: #ffc76b; }
+.status.later { background: rgba(255,255,255,.05); border: 1px solid #2c323a; color: var(--text-3); }
+
+.feats { list-style: none; margin-top: 18px; display: grid; gap: 10px; }
+.feats li {
+  position: relative;
+  padding-left: 24px;
+  color: var(--text-2);
+  font-size: 15.5px;
+}
+.feats li::before {
+  content: "";
+  position: absolute;
+  left: 4px; top: 9px;
+  width: 8px; height: 8px;
+  background: var(--accent);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+.feats li b { color: var(--text); }
+
+.buy {
+  position: sticky;
+  top: 84px;
+  text-align: center;
+}
+.price {
+  font-family: var(--display);
+  font-size: 54px;
+  line-height: 1;
+  color: var(--text);
+}
+.price small { font-family: var(--ui); font-size: 13px; letter-spacing: 1.2px; color: var(--text-3); display: block; margin-top: 6px; text-transform: uppercase; }
+.buy .btn { width: 100%; margin-top: 18px; }
+.buy .fine { font-size: 12.5px; color: var(--text-4); margin-top: 14px; line-height: 1.55; }
+
+/* roadmap grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(258px, 1fr));
+  gap: 16px;
+}
+.card h3 { font-size: 24px; }
+/* Own line, so a title that wraps doesn't leave one card's badge sitting
+   lower than its neighbours'. */
+.card h3 .status { display: block; width: fit-content; margin: 11px 0 0; }
+.card p { color: var(--text-2); font-size: 15px; margin-top: 10px; }
+.card .when {
+  display: block;
+  margin-top: 14px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-4);
+}
+
+/* trust section */
+.trust { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.trust .panel h3 { font-size: 21px; color: var(--text); }
+.trust .panel p { color: var(--text-2); font-size: 14.5px; margin-top: 9px; }
+
+/* faq */
+.faq { display: grid; gap: 2px; max-width: 800px; }
+.faq details {
+  background: linear-gradient(140deg, var(--panel-a), var(--panel-b));
+  border: 1px solid var(--line);
+  padding: 16px 20px;
+}
+.faq summary {
+  cursor: pointer;
+  font-family: var(--display);
+  font-size: 21px;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; color: var(--accent); font-size: 26px; line-height: 1; }
+.faq details[open] summary::after { content: "\2212"; }
+.faq details p { color: var(--text-2); font-size: 15px; margin-top: 12px; }
+
+/* contact */
+.contact { text-align: center; }
+.contact h2 { font-size: clamp(34px, 5vw, 52px); }
+.contact p { color: var(--text-2); margin-top: 12px; font-size: 16.5px; }
+.mail {
+  display: inline-block;
+  font-family: var(--display);
+  font-size: clamp(26px, 4.4vw, 40px);
+  letter-spacing: 1px;
+  color: var(--accent-lt);
+  text-decoration: none;
+  margin-top: 20px;
+  border-bottom: 2px solid rgba(var(--accent-rgb) / .45);
+}
+.mail:hover { color: #fff; border-bottom-color: var(--accent); }
+
+/* footer */
+footer { padding: 34px 0 46px; }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 18px; justify-content: space-between; align-items: center; }
+footer p { font-size: 12.5px; color: var(--text-4); line-height: 1.65; max-width: 62ch; }
+footer a { color: var(--text-3); }
+
+/* ---------------- responsive ---------------- */
+@media (max-width: 900px) {
+  .hero-grid { grid-template-columns: 1fr; gap: 40px; }
+  .product { grid-template-columns: 1fr; }
+  .buy { position: static; }
+  .nav nav { gap: 16px; }
+  .nav nav a { font-size: 13px; }
+}
+@media (max-width: 640px) {
+  .nav .wrap { height: auto; padding-top: 12px; padding-bottom: 12px; flex-wrap: wrap; gap: 10px 18px; }
+  .nav nav { margin-left: 0; width: 100%; flex-wrap: wrap; gap: 14px; }
+  section { padding: 56px 0; }
+  .hero { padding: 52px 0 46px; }
+  .widget { grid-template-columns: 58px 1fr; gap: 12px; padding: 12px; }
+  .badge { height: 54px; }
+  .badge .glyph { font-size: 27px; }
+  .rank-name { font-size: 26px; }
+  .rp-line { flex-wrap: wrap; }
+  .rp-needed { text-align: left; }
+  .btn { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+  html { scroll-behavior: auto; }
+}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top">svoids<span>apex</span>fx</a>
+    <nav>
+      <a href="#overlays">Overlays</a>
+      <a href="#next">Coming next</a>
+      <a href="#safe">Ban risk</a>
+      <a href="#faq">FAQ</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ======================= HERO ======================= -->
+<div class="hero" id="top">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <div class="eyebrow">Apex Legends · OBS</div>
+        <h1>Overlays that <em>react</em> to your game</h1>
+        <p class="lede">
+          Live rank and RP on your stream, re-themed to your tier as you climb.
+          Set up in two minutes, drop it into OBS, forget it exists.
+        </p>
+        <div class="btn-row">
+          <a class="btn primary" href="#overlays">See the rank overlay</a>
+          <a class="btn ghost" href="#next">What's coming</a>
+        </div>
+        <p class="under">
+          One file. No install, no background app, no account with us.
+        </p>
+      </div>
+
+      <div class="demo-stage">
+        <span class="tag">Live demo</span>
+        <div class="widget" id="w">
+          <div class="badge"><span class="glyph" id="wGlyph">G</span></div>
+          <div>
+            <div class="player"><span class="dot"></span><span>svoid</span></div>
+            <div class="rank-name"><span id="wTier">GOLD</span><span class="div" id="wDiv">III</span></div>
+            <div class="rp-line">
+              <div class="rp-current">
+                <span id="wRp">6,250</span><span class="unit">RP</span>
+                <span class="delta" id="wDelta">+72</span>
+              </div>
+              <div class="rp-needed" id="wNeeded">480 RP to Gold II</div>
+            </div>
+            <div class="bar"><div class="bar-fill" id="wBar" style="width:35%"></div></div>
+          </div>
+        </div>
+        <p class="caption">Real overlay, real logic — running on fake RP so you can watch it climb.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= PRODUCT ======================= -->
+<section id="overlays">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow">Available now</div>
+      <h2>The rank overlay</h2>
+      <p>The one running in the corner of this page. It reads your live rank from the Apex Legends Status API and puts it on your stream.</p>
+    </div>
+
+    <div class="product">
+      <div>
+        <h3>Apex Rank Overlay <span class="status live">Out now</span></h3>
+        <ul class="feats">
+          <li><b>Live rank, division and RP</b>, refreshed once a minute.</li>
+          <li><b>Exact RP to your next division</b> — no mental arithmetic mid-stream.</li>
+          <li><b>Session +/- RP chip</b>, so viewers can see how the night is going.</li>
+          <li><b>Re-themes to your tier.</b> Frame, glow, bar and highlights all shift from bronze through to predator.</li>
+          <li><b>On Master it switches to RP-to-Predator</b>, tracking the live cutoff for your platform.</li>
+          <li><b>Two-minute setup guide built in.</b> It tests your details, then builds you a ready-made file to point OBS at.</li>
+          <li><b>Transparent background.</b> No green screen, no chroma key.</li>
+          <li><b>PC, PlayStation and Xbox.</b></li>
+        </ul>
+      </div>
+
+      <!-- PLACEHOLDER: set the real price and wire the button to your store -->
+      <aside class="panel buy">
+        <div class="price">$XX<small>one-time · yours forever</small></div>
+        <a class="btn primary" href="#contact" id="buyBtn">Get the overlay</a>
+        <p class="fine">
+          Instant download. Use it on as many of your own machines as you like,
+          on every stream and video you make.
+        </p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= ROADMAP ======================= -->
+<section id="next">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow">In the works</div>
+      <h2>Effects that fire mid-match</h2>
+      <p>
+        The rank overlay tells your viewers where you stand. This next run is about
+        making the stream <em>react</em> the moment something happens in the game —
+        a kill, a win, a weapon you had no business finding.
+      </p>
+    </div>
+
+    <div class="grid">
+      <div class="panel card">
+        <h3>Kill FX <span class="status soon">Next up</span></h3>
+        <p>
+          Fire an effect the instant you down someone — and know what you did it with,
+          so a headshot from a Wingman doesn't look like a knuckle cluster.
+        </p>
+        <span class="when">Most stable events · building first</span>
+      </div>
+
+      <div class="panel card">
+        <h3>Victory celebration <span class="status soon">Next up</span></h3>
+        <p>
+          Champion screen hits, and the stream goes off — full-frame celebration,
+          your branding, your sound. The moment your clip channel is built on.
+        </p>
+        <span class="when">Most stable events · building first</span>
+      </div>
+
+      <div class="panel card">
+        <h3>Rank-up FX <span class="status soon">Next up</span></h3>
+        <p>
+          Crossing into a new tier is the payoff for a whole night of grinding.
+          Right now it slides past in silence. This makes it an event.
+        </p>
+        <span class="when">Pairs with the rank overlay</span>
+      </div>
+
+      <div class="panel card">
+        <h3>Weapon pickup FX <span class="status later">Exploring</span></h3>
+        <p>
+          Loot a Mozambique, Lifeline starts dancing on your stream. Loot a Kraber,
+          the whole frame knows about it. The most fun idea on this list and the
+          most fragile — it leans on inventory data that Apex patches like to break.
+        </p>
+        <span class="when">After the three above land</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= TRUST ======================= -->
+<section id="safe">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow">The question everyone asks first</div>
+      <h2>Will this get me banned?</h2>
+      <p>No. Here is exactly why, so you can judge it for yourself rather than taking our word for it.</p>
+    </div>
+
+    <div class="trust">
+      <div class="panel">
+        <h3>Nothing touches the game</h3>
+        <p>
+          No memory reading, no injection, no modified files, no automation of any
+          input. Apex runs exactly as it ships.
+        </p>
+      </div>
+      <div class="panel">
+        <h3>Stats come from a public API</h3>
+        <p>
+          The rank overlay asks Apex Legends Status — a long-running community stats
+          service — for your public profile. Same data anyone can look up on their site.
+        </p>
+      </div>
+      <div class="panel">
+        <h3>Live events come from Overwolf</h3>
+        <p>
+          The upcoming FX read match events through Overwolf's official game-events
+          API, the sanctioned route thousands of Apex apps already use.
+        </p>
+      </div>
+      <div class="panel">
+        <h3>Your key stays yours</h3>
+        <p>
+          The overlay talks to exactly one place: the stats API. No analytics, no
+          telemetry, nothing phones home to us. There is no account to make.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= FAQ ======================= -->
+<section id="faq">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow">Before you buy</div>
+      <h2>Straight answers</h2>
+    </div>
+
+    <div class="faq">
+      <details open>
+        <summary>What do I actually get?</summary>
+        <p>
+          A single HTML file. You open it once in your browser, it walks you through
+          getting a free API key and entering your name, then it builds you a
+          personalised copy. You add that copy to OBS as a browser source. That's it —
+          no installer, nothing running in the background.
+        </p>
+      </details>
+      <details>
+        <summary>Do I need to know how to code?</summary>
+        <p>
+          No. You never open it in a text editor. The built-in setup guide handles
+          everything and tells you exactly what's wrong if something doesn't connect.
+        </p>
+      </details>
+      <details>
+        <summary>Does it cost anything to run?</summary>
+        <p>
+          No. The stats API key is free, and the overlay makes one request a minute —
+          nowhere near the free tier's limit, even with several overlays open.
+        </p>
+      </details>
+      <details>
+        <summary>Console?</summary>
+        <p>
+          Yes. Pick PlayStation or Xbox during setup. You still run OBS on a PC; the
+          overlay just looks up your console account.
+        </p>
+      </details>
+      <details>
+        <summary>Streamlabs or OBS.Live?</summary>
+        <p>Both work. They use the same browser source under the hood.</p>
+      </details>
+      <details>
+        <summary>Two accounts?</summary>
+        <p>
+          Run the setup guide twice. Each run builds its own file, named after that
+          player, so they can't overwrite each other. Add a browser source for each.
+        </p>
+      </details>
+      <details>
+        <summary>What if a new season changes the RP thresholds?</summary>
+        <p>
+          There's a plain table of tier costs near the bottom of the file you can edit
+          in Notepad — and updates go out when Respawn changes them.
+        </p>
+      </details>
+      <details>
+        <summary>Can I put my own branding on it?</summary>
+        <p>
+          Yes — it's plain HTML and CSS, and modifying your copy for your own streams
+          is explicitly allowed. Reselling it or passing it around isn't.
+        </p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= CONTACT ======================= -->
+<section id="contact" class="contact">
+  <div class="wrap">
+    <div class="eyebrow">Get in touch</div>
+    <h2>Got an idea for an effect?</h2>
+    <p>
+      Most of the roadmap above came from streamers asking for something.
+      Tell me what you want to see fire on your stream.
+    </p>
+    <!-- PLACEHOLDER: confirm this address exists on your Google Workspace account -->
+    <a class="mail" href="mailto:hello@svoidsapexfx.com">hello@svoidsapexfx.com</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>
+      &copy; <span id="yr">2026</span> svoidsapexfx. All rights reserved.
+      <br>
+      Apex Legends is a trademark of Electronic Arts Inc. This site and its products
+      are not affiliated with, endorsed by, or sponsored by Electronic Arts or Respawn
+      Entertainment. Rank data is provided by
+      <a href="https://apexlegendsstatus.com" target="_blank" rel="noopener">Apex Legends Status</a>,
+      an independent community project.
+    </p>
+    <a class="brand" href="#top">svoids<span>apex</span>fx</a>
+  </div>
+</footer>
+
+<script>
+/* =================================================================
+   LIVE DEMO
+   Same tier table and the same maths as the real overlay, driven by
+   fake RP that climbs on a loop. Nothing here is faked past the
+   numbers — if the product's thresholds change, this changes too.
+   ================================================================= */
+const TIERS = [
+  { name: "Rookie",   start: 0,     steps: [250,  250,  250,  250 ], glyph: "R" },
+  { name: "Bronze",   start: 1000,  steps: [500,  500,  500,  500 ], glyph: "B" },
+  { name: "Silver",   start: 3000,  steps: [500,  500,  500,  1000], glyph: "S" },
+  { name: "Gold",     start: 5500,  steps: [750,  750,  750,  750 ], glyph: "G" },
+  { name: "Platinum", start: 8500,  steps: [750,  750,  1000, 1000], glyph: "P" },
+  { name: "Diamond",  start: 12000, steps: [1000, 1000, 1000, 1000], glyph: "D" },
+  { name: "Master",   start: 16000, steps: [],                       glyph: "M" }
+];
+
+/* [bright, dim] per tier — the palette the whole page borrows from */
+const TIER_COLORS = {
+  rookie:   ["#9aa2ab", "#5c636b"],
+  bronze:   ["#d08a45", "#8a5522"],
+  silver:   ["#cfd8e3", "#7d8794"],
+  gold:     ["#f5c451", "#a8792a"],
+  platinum: ["#49d6c8", "#1d7d78"],
+  diamond:  ["#5aa9ff", "#2360a8"],
+  master:   ["#b061ff", "#5f2a9c"]
+};
+
+const ROMAN = { 1: "I", 2: "II", 3: "III", 4: "IV" };
+const $ = id => document.getElementById(id);
+
+/* Where does this RP total sit? Returns tier, division and how far
+   through that division you are. */
+function place(rp) {
+  let i = 0;
+  for (let t = 0; t < TIERS.length; t++) if (rp >= TIERS[t].start) i = t;
+  const tier = TIERS[i];
+
+  if (!tier.steps.length) {                       // Master and above
+    return { tier, div: 0, into: 1, needed: 0, next: null };
+  }
+  let floor = tier.start;
+  for (let d = 0; d < tier.steps.length; d++) {
+    const ceil = floor + tier.steps[d];
+    if (rp < ceil) {
+      const nextName = d === tier.steps.length - 1
+        ? TIERS[i + 1].name
+        : tier.name + " " + ROMAN[4 - d - 1];
+      return {
+        tier, div: 4 - d,
+        into: (rp - floor) / (ceil - floor),
+        needed: ceil - rp,
+        next: nextName
+      };
+    }
+    floor = ceil;
+  }
+  return { tier, div: 1, into: 1, needed: 0, next: null };
+}
+
+function hexToRgb(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255].join(" ");
+}
+
+/* Lighten a hex colour toward white — used for the highlight tone. */
+function lighten(hex, amt) {
+  const n = parseInt(hex.slice(1), 16);
+  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+    .map(c => Math.round(c + (255 - c) * amt));
+  return "#" + ch.map(c => c.toString(16).padStart(2, "0")).join("");
+}
+
+let rp = 5400;
+let lastTier = "";
+const widget = $("w");
+const stage = document.querySelector(".demo-stage");
+
+function paint(gain) {
+  const p = place(rp);
+  const key = p.tier.name.toLowerCase();
+  const [bright, dim] = TIER_COLORS[key];
+
+  if (key !== lastTier) {                          // promoted — re-theme
+    /* Scoped to the demo stage on purpose. Letting the tier colour reach
+       :root would drag the brand red off the buttons with it, and a grey
+       Silver-tier call to action reads as disabled. */
+    const scope = stage.style;
+    scope.setProperty("--accent", bright);
+    scope.setProperty("--accent-rgb", hexToRgb(bright));
+    scope.setProperty("--accent-lt", lighten(bright, .35));
+    scope.setProperty("--accent-dim", dim);
+    lastTier = key;
+    $("wGlyph").textContent = p.tier.glyph;
+  }
+
+  $("wTier").textContent = p.tier.name.toUpperCase();
+  $("wDiv").textContent  = p.div ? ROMAN[p.div] : "";
+  $("wRp").textContent   = rp.toLocaleString();
+  $("wNeeded").textContent = p.next
+    ? p.needed.toLocaleString() + " RP to " + p.next
+    : "Apex Predator cutoff";
+  $("wBar").style.width = Math.round(p.into * 100) + "%";
+
+  if (gain) {
+    const d = $("wDelta");
+    d.textContent = "+" + gain;
+    d.classList.add("on");
+    widget.classList.add("flash");
+    setTimeout(() => widget.classList.remove("flash"), 720);
+    setTimeout(() => d.classList.remove("on"), 2200);
+  }
+}
+
+function tick() {
+  const gain = 40 + Math.floor(Math.random() * 90);
+  rp += gain;
+  if (rp > 17200) rp = 1100;                       // loop back to Bronze
+  paint(gain);
+}
+
+paint(0);
+setInterval(tick, 2100);
+
+$("yr").textContent = new Date().getFullYear();
+</script>
+
+</body>
+</html>
