@@ -26,7 +26,7 @@ Turn on **Enforce HTTPS** in Settings → Pages once the certificate is issued.
 ## Before this goes live
 
 - [x] Set the price — $7.99
-- [ ] Wire the Get the overlay button to the store checkout (`#buyBtn`)
+- [x] Buy button wired to the Stripe payment link
 - [x] Contact address — svoid37@svoidsapexfx.com
 
 ## Promo codes
