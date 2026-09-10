@@ -863,6 +863,23 @@ section { padding: 74px 0; border-bottom: 1px solid var(--line-soft); }
   letter-spacing: 1.6px;
   color: #8fd9b0;
 }
+.coty-rp .cdelta {
+  font-family: var(--ui);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  color: #b6ffd6;
+  background: rgba(61,220,132,.16);
+  border: 1px solid rgba(61,220,132,.4);
+  border-radius: 2px;
+  padding: 0 5px;
+  margin-left: 2px;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity .4s ease, transform .4s ease;
+}
+.coty-rp .cdelta.on { opacity: 1; transform: none; }
+
 .coty-rp .n {
   margin-left: auto;
   font-family: var(--ui);
@@ -899,7 +916,7 @@ section { padding: 74px 0; border-bottom: 1px solid var(--line-soft); }
   opacity: 0;
   transition: opacity .45s ease, transform .7s cubic-bezier(.34,1.35,.5,1);
 }
-.coty-sprout.up      { top: 0;    transform: scaleY(1)  scale(.12); }
+.coty-sprout.up      { top: -1px; transform: scaleY(1)  scale(.12); }
 .coty-sprout.up.on   {            transform: scaleY(1)  scale(1); }
 .coty-sprout.down    { bottom: 1px; transform: scaleY(-1) scale(.12); }
 .coty-sprout.down.on {            transform: scaleY(-1) scale(1); }
@@ -930,7 +947,7 @@ section { padding: 74px 0; border-bottom: 1px solid var(--line-soft); }
 .coty-bar {
   position: relative;
   height: 8px;
-  margin-top: 8px;
+  margin-top: 15px;
   border-radius: 5px;
   background: rgba(0,0,0,.5);
   border: 1px solid rgba(61,220,132,.28);
@@ -1233,6 +1250,7 @@ footer a { color: var(--text-3); }
                   <div class="rp-line">
                     <div class="rp-current">
                       <span id="s2Rp">0</span><span class="unit">RP</span>
+                      <span class="delta" id="s2Delta"></span>
                     </div>
                     <div class="rp-needed" id="s2Needed"></div>
                   </div>
@@ -1267,6 +1285,7 @@ footer a { color: var(--text-3); }
                   <div class="coty-rank"><span id="cTier">MASTER</span><span class="d" id="cDiv"></span></div>
                   <div class="coty-rp">
                     <span id="cRp">0</span><span class="u">RP</span>
+                    <span class="cdelta" id="cDelta"></span>
                     <span class="n" id="cNeeded"></span>
                   </div>
                   <div class="coty-bar">
@@ -1781,39 +1800,54 @@ function paint(gain) {
   }
 
   if (gain) {
-    const d = $("wDelta");
-    d.textContent = "+" + gain.toLocaleString();
-    d.classList.add("on", "up");
-    widget.classList.remove("flash");
-    void widget.offsetWidth;              // restart the animation
-    widget.classList.add("flash");
-    setTimeout(() => d.classList.remove("on"), 2400);
+    const label = "+" + gain.toLocaleString();
+
+    /* every widget on the page reports the same haul at the same moment */
+    const chips = [
+      { el: $("wDelta"),  cls: "on up" },
+      { el: $("s2Delta"), cls: "on up" },
+      { el: $("cDelta"),  cls: "on" }
+    ];
+    chips.forEach(c => {
+      if (!c.el) return;
+      c.el.textContent = label;
+      c.cls.split(" ").forEach(k => c.el.classList.add(k));
+      setTimeout(() => c.el.classList.remove("on"), 2400);
+    });
+
+    [widget, $("s2Widget")].forEach(w => {
+      if (!w) return;
+      w.classList.remove("flash");
+      void w.offsetWidth;                 // restart the animation
+      w.classList.add("flash");
+    });
   }
 }
 
 /* Build the vine once.
 
-   Everything grows DOWNWARD from the underside of the track. Upward stems tall
-   enough to read as a plant collide with the RP line above the bar, and growth
-   along the bottom edge is also how the plants sit on the frame this build is
-   based on. Longer stems carry a second leaf on the opposite side so the vine
-   thickens as it extends rather than just repeating.                         */
+   Sprouts grow from BOTH edges of the track, sized to the room each side
+   actually has. Measured in the built widget: roughly 14px above the bar
+   before the RP line, and roughly 28px below before the shell clips. Upward
+   sprouts are therefore small shoots and downward ones carry thelonger growth,
+   with a second leaf on the longer stems so the vine thickens as it extends. */
 function buildVine() {
   const vine = $("cVine");
   vine.dataset.built = "1";
   const SPROUTS = [
-    { at:  4, stem:  9, leaf: 11, lean:  -9, tilt: -32 },
-    { at: 12, stem: 15, leaf: 13, lean:   5, tilt: -24, leaf2: 10, tilt2: 40 },
-    { at: 20, stem: 10, leaf: 11, lean:  -6, tilt: -38 },
-    { at: 28, stem: 18, leaf: 15, lean:   7, tilt: -20, leaf2: 11, tilt2: 44 },
-    { at: 36, stem: 11, leaf: 12, lean: -10, tilt: -34 },
-    { at: 44, stem: 20, leaf: 15, lean:   3, tilt: -18, leaf2: 12, tilt2: 38 },
-    { at: 52, stem: 12, leaf: 12, lean:  -7, tilt: -36 },
-    { at: 60, stem: 17, leaf: 14, lean:   8, tilt: -22, leaf2: 11, tilt2: 42 },
-    { at: 68, stem: 10, leaf: 11, lean:  -5, tilt: -30 },
-    { at: 76, stem: 19, leaf: 15, lean:   6, tilt: -19, leaf2: 12, tilt2: 40 },
-    { at: 84, stem: 12, leaf: 12, lean:  -8, tilt: -35 },
-    { at: 92, stem: 16, leaf: 14, lean:   4, tilt: -25, leaf2: 10, tilt2: 43 }
+    { at:  4, up: false, stem:  8, leaf: 10, lean:  -8, tilt: -32 },
+    { at: 11, up: true,  stem:  3, leaf:  6, lean:   6, tilt: -30 },
+    { at: 19, up: false, stem: 13, leaf: 12, lean:   5, tilt: -22, leaf2:  9, tilt2: 40 },
+    { at: 27, up: true,  stem:  3, leaf:  6, lean:  -7, tilt: -36 },
+    { at: 34, up: false, stem:  9, leaf: 11, lean:  -9, tilt: -35 },
+    { at: 42, up: true,  stem:  4, leaf:  7, lean:   4, tilt: -26 },
+    { at: 50, up: false, stem: 14, leaf: 12, lean:   3, tilt: -19, leaf2:  9, tilt2: 42 },
+    { at: 58, up: true,  stem:  3, leaf:  6, lean:  -5, tilt: -33 },
+    { at: 66, up: false, stem: 10, leaf: 11, lean:   7, tilt: -24 },
+    { at: 74, up: true,  stem:  4, leaf:  7, lean:   7, tilt: -28 },
+    { at: 82, up: false, stem: 13, leaf: 12, lean:  -6, tilt: -20, leaf2:  9, tilt2: 41 },
+    { at: 90, up: true,  stem:  3, leaf:  6, lean:  -6, tilt: -34 },
+    { at: 96, up: false, stem:  8, leaf: 10, lean:   5, tilt: -30 }
   ];
 
   const LEAF_PATH = "M3 29C1 17 7 6 25 1c2 13-5 24-22 28z";
@@ -1834,7 +1868,7 @@ function buildVine() {
 
   SPROUTS.forEach(sp => {
     const el = document.createElement("span");
-    el.className = "coty-sprout down";
+    el.className = "coty-sprout " + (sp.up ? "up" : "down");
     el.style.left = sp.at + "%";
     el.dataset.at = sp.at;
 
@@ -1847,9 +1881,7 @@ function buildVine() {
     stem.style.height = sp.stem + "px";
     arm.appendChild(stem);
 
-    /* main leaf sits on the stem tip */
     arm.appendChild(makeLeaf(sp.leaf, sp.stem - 2, sp.tilt));
-    /* second leaf, lower down the stem and thrown the other way */
     if (sp.leaf2) arm.appendChild(makeLeaf(sp.leaf2, Math.round(sp.stem * 0.45), sp.tilt2));
 
     el.appendChild(arm);
