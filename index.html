@@ -874,45 +874,58 @@ section { padding: 74px 0; border-bottom: 1px solid var(--line-soft); }
 }
 .coty-rp .n b { color: var(--coty); font-size: 14px; }
 
-/* The bar grows like a plant: each sprout opens as the fill passes it, so
-   the vine creeps outward along the track as RP climbs. Sprouts alternate
-   above and below and are staggered slightly so it reads organic rather
-   than like a row of ticks. */
+/* The bar grows like a plant: each sprout opens as the fill passes it, so the
+   vine creeps along the track as RP climbs.
+
+   Geometry, because the joins matter:
+   - .coty-sprout is a zero-size anchor pinned to the top or bottom EDGE of the
+     bar, so stems visibly emerge from the track rather than from inside it.
+   - Downward sprouts are the same shape flipped with scaleY(-1), so one set of
+     measurements serves both and nothing has to be mirrored by hand.
+   - .coty-arm carries the lean, so the whole stem-and-leaf tilts together.
+   - The leaf pivots about its stalk end (transform-origin near its base), not
+     its centre, so it stays attached to the stem tip at any angle.            */
 .coty-vine {
   position: absolute;
-  inset: -20px 0;
-  pointer-events: none;
+  inset: 0;
   overflow: visible;
+  pointer-events: none;
 }
+
 .coty-sprout {
   position: absolute;
-  top: 50%;
   width: 0; height: 0;
+  transform-origin: 0 0;
   opacity: 0;
-  transform: scale(.2) rotate(-8deg);
-  transform-origin: bottom center;
-  transition: opacity .5s ease, transform .65s cubic-bezier(.34,1.4,.5,1);
+  transition: opacity .45s ease, transform .7s cubic-bezier(.34,1.35,.5,1);
 }
-.coty-sprout.on { opacity: 1; transform: scale(1) rotate(0deg); }
+.coty-sprout.up      { top: 0;    transform: scaleY(1)  scale(.12); }
+.coty-sprout.up.on   {            transform: scaleY(1)  scale(1); }
+.coty-sprout.down    { bottom: 1px; transform: scaleY(-1) scale(.12); }
+.coty-sprout.down.on {            transform: scaleY(-1) scale(1); }
+.coty-sprout.on { opacity: 1; }
 
-.coty-stem {
+.coty-arm {
   position: absolute;
   left: 0; bottom: 0;
-  width: 1.5px;
-  background: linear-gradient(var(--coty-lt), var(--coty));
-  box-shadow: 0 0 4px rgba(61,220,132,.7);
-  border-radius: 2px;
+  width: 0; height: 0;
+  transform-origin: 0 100%;
 }
-.coty-sprout svg {
+.coty-stem {
   position: absolute;
-  fill: var(--coty);
-  filter: drop-shadow(0 0 3px rgba(61,220,132,.65));
+  left: -1px; bottom: 0;
+  width: 2px;
+  border-radius: 2px;
+  background: linear-gradient(var(--coty-lt), var(--coty));
+  box-shadow: 0 0 5px rgba(61,220,132,.75);
 }
-/* upward sprouts sit above the track, downward ones below */
-.coty-sprout.up   { transform-origin: bottom center; }
-.coty-sprout.down { transform-origin: top center; }
-.coty-sprout.down { transform: scale(.2) rotate(8deg); }
-.coty-sprout.down.on { transform: scale(1) rotate(0deg); }
+.coty-leafy {
+  position: absolute;
+  left: 0;
+  fill: var(--coty);
+  filter: drop-shadow(0 0 3px rgba(61,220,132,.7));
+  transform-origin: 12% 92%;   /* the stalk end of the leaf path */
+}
 
 .coty-bar {
   position: relative;
@@ -1778,50 +1791,68 @@ function paint(gain) {
   }
 }
 
-/* Build the vine once: a run of sprouts along the bar, alternating above and
-   below, each a stem plus one or two leaves. Sizes and angles vary so it does
-   not read as a repeating pattern. */
+/* Build the vine once.
+
+   Everything grows DOWNWARD from the underside of the track. Upward stems tall
+   enough to read as a plant collide with the RP line above the bar, and growth
+   along the bottom edge is also how the plants sit on the frame this build is
+   based on. Longer stems carry a second leaf on the opposite side so the vine
+   thickens as it extends rather than just repeating.                         */
 function buildVine() {
   const vine = $("cVine");
   vine.dataset.built = "1";
   const SPROUTS = [
-    { at:  6, up: true,  stem: 13, leaf: 11, tilt: -28 },
-    { at: 14, up: false, stem: 10, leaf:  9, tilt:  24 },
-    { at: 23, up: true,  stem: 17, leaf: 13, tilt: -16 },
-    { at: 32, up: false, stem: 13, leaf: 11, tilt:  32 },
-    { at: 41, up: true,  stem: 12, leaf: 10, tilt: -36 },
-    { at: 50, up: true,  stem: 20, leaf: 14, tilt:  -8 },
-    { at: 59, up: false, stem: 15, leaf: 12, tilt:  20 },
-    { at: 68, up: true,  stem: 14, leaf: 11, tilt: -30 },
-    { at: 77, up: false, stem: 11, leaf: 10, tilt:  28 },
-    { at: 86, up: true,  stem: 19, leaf: 14, tilt: -14 },
-    { at: 94, up: false, stem: 13, leaf: 11, tilt:  22 }
+    { at:  4, stem:  9, leaf: 11, lean:  -9, tilt: -32 },
+    { at: 12, stem: 15, leaf: 13, lean:   5, tilt: -24, leaf2: 10, tilt2: 40 },
+    { at: 20, stem: 10, leaf: 11, lean:  -6, tilt: -38 },
+    { at: 28, stem: 18, leaf: 15, lean:   7, tilt: -20, leaf2: 11, tilt2: 44 },
+    { at: 36, stem: 11, leaf: 12, lean: -10, tilt: -34 },
+    { at: 44, stem: 20, leaf: 15, lean:   3, tilt: -18, leaf2: 12, tilt2: 38 },
+    { at: 52, stem: 12, leaf: 12, lean:  -7, tilt: -36 },
+    { at: 60, stem: 17, leaf: 14, lean:   8, tilt: -22, leaf2: 11, tilt2: 42 },
+    { at: 68, stem: 10, leaf: 11, lean:  -5, tilt: -30 },
+    { at: 76, stem: 19, leaf: 15, lean:   6, tilt: -19, leaf2: 12, tilt2: 40 },
+    { at: 84, stem: 12, leaf: 12, lean:  -8, tilt: -35 },
+    { at: 92, stem: 16, leaf: 14, lean:   4, tilt: -25, leaf2: 10, tilt2: 43 }
   ];
+
+  const LEAF_PATH = "M3 29C1 17 7 6 25 1c2 13-5 24-22 28z";
+
+  function makeLeaf(width, bottom, tilt) {
+    const leaf = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    leaf.setAttribute("viewBox", "0 0 28 30");
+    leaf.setAttribute("class", "coty-leafy");
+    leaf.style.width = width + "px";
+    leaf.style.height = Math.round(width * 30 / 28) + "px";
+    leaf.style.bottom = bottom + "px";
+    leaf.style.transform = "rotate(" + tilt + "deg)";
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", LEAF_PATH);
+    leaf.appendChild(path);
+    return leaf;
+  }
 
   SPROUTS.forEach(sp => {
     const el = document.createElement("span");
-    el.className = "coty-sprout " + (sp.up ? "up" : "down");
+    el.className = "coty-sprout down";
     el.style.left = sp.at + "%";
     el.dataset.at = sp.at;
+
+    const arm = document.createElement("span");
+    arm.className = "coty-arm";
+    arm.style.transform = "rotate(" + sp.lean + "deg)";
 
     const stem = document.createElement("span");
     stem.className = "coty-stem";
     stem.style.height = sp.stem + "px";
-    stem.style.bottom = sp.up ? "0" : "auto";
-    stem.style.top = sp.up ? "auto" : "0";
-    el.appendChild(stem);
+    arm.appendChild(stem);
 
-    const leaf = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    leaf.setAttribute("viewBox", "0 0 28 30");
-    leaf.style.width = sp.leaf + "px";
-    leaf.style.left = "-1px";
-    leaf.style[sp.up ? "bottom" : "top"] = (sp.stem - 3) + "px";
-    leaf.style.transform = "rotate(" + (sp.up ? sp.tilt : 180 - sp.tilt) + "deg)";
-    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    path.setAttribute("d", "M3 29C1 17 7 6 25 1c2 13-5 24-22 28z");
-    leaf.appendChild(path);
-    el.appendChild(leaf);
+    /* main leaf sits on the stem tip */
+    arm.appendChild(makeLeaf(sp.leaf, sp.stem - 2, sp.tilt));
+    /* second leaf, lower down the stem and thrown the other way */
+    if (sp.leaf2) arm.appendChild(makeLeaf(sp.leaf2, Math.round(sp.stem * 0.45), sp.tilt2));
 
+    el.appendChild(arm);
     vine.appendChild(el);
   });
 }
