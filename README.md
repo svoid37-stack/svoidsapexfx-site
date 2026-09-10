@@ -25,9 +25,16 @@ Turn on **Enforce HTTPS** in Settings → Pages once the certificate is issued.
 
 ## Before this goes live
 
-- [ ] Set the real price (`$XX` placeholder in the buy panel)
+- [x] Set the price — $7.99
 - [ ] Wire the Get the overlay button to the store checkout (`#buyBtn`)
 - [ ] Confirm the contact address exists on the Workspace account
+
+## Promo codes
+
+Free copies for streamers and viewer discounts are handled by the store
+(100%-off and percentage codes), not by anything in the overlay file. A code
+check inside the HTML would be trivially removable and would only add friction
+for paying customers.
 
 ## Product source
 
