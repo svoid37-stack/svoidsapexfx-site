@@ -615,6 +615,51 @@ section { padding: 74px 0; border-bottom: 1px solid var(--line-soft); }
    frame colour deliberately does NOT re-theme by tier — on a custom build the
    streamer's brand colour is the point, so only the rank content changes.
    ------------------------------------------------------------------------- */
+/* stock vs custom, side by side — the comparison is the whole argument */
+.compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 26px;
+  align-items: start;
+}
+@media (max-width: 980px) { .compare { grid-template-columns: 1fr; } }
+
+.compare-label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.compare-label b { color: var(--text); }
+.compare-label.green { color: #7ff0b3; }
+.compare-label.green b { color: #c7ffe0; }
+
+.compare-cell {
+  position: relative;
+  padding: 18px 16px 16px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background:
+    linear-gradient(rgba(10,12,15,.55), rgba(10,12,15,.72)),
+    repeating-linear-gradient(115deg, #1a2029 0 12px, #151a22 12px 24px);
+}
+.compare-cell.custom {
+  border-color: #1f6b45;
+  background:
+    linear-gradient(rgba(10,12,15,.5), rgba(10,12,15,.72)),
+    repeating-linear-gradient(115deg, #16211b 0 12px, #121a15 12px 24px);
+}
+.compare-caption {
+  margin-top: 16px;
+  font-size: 12.5px;
+  color: var(--text-4);
+  text-align: center;
+}
+
 .coty-demo {
   position: relative;
   margin-top: 26px;
@@ -1084,40 +1129,75 @@ footer a { color: var(--text-3); }
     </div>
 
 
-    <div class="coty-demo">
-      <span class="tag">Example build · a streamer's own look</span>
-      <div class="coty-scale" id="cScale">
-        <div class="coty-shell" id="cShell">
-          <div class="coty-frame">
-            <span class="coty-corner tl"></span>
-            <span class="coty-corner tr"></span>
-            <span class="coty-corner bl"></span>
-            <span class="coty-corner br"></span>
-            <span class="coty-mark">C</span>
-            <svg class="coty-leaf a" viewBox="0 0 28 30" aria-hidden="true"><path d="M3 29C1 17 7 6 25 1c2 13-5 24-22 28z"/><path d="M25 1C16 8 9 18 4 28" stroke="#0a1710" stroke-width="1.6" fill="none" opacity=".55"/></svg>
-            <svg class="coty-leaf b" viewBox="0 0 28 30" aria-hidden="true"><path d="M3 29C1 17 7 6 25 1c2 13-5 24-22 28z"/><path d="M25 1C16 8 9 18 4 28" stroke="#0a1710" stroke-width="1.6" fill="none" opacity=".55"/></svg>
-            <svg class="coty-leaf c" viewBox="0 0 28 30" aria-hidden="true"><path d="M3 29C1 17 7 6 25 1c2 13-5 24-22 28z"/><path d="M25 1C16 8 9 18 4 28" stroke="#0a1710" stroke-width="1.6" fill="none" opacity=".55"/></svg>
-
-            <div class="coty-inner">
-              <div class="coty-badge"><img id="cImg" src="" alt=""></div>
-              <div class="coty-info">
-                <div class="coty-player"><span class="coty-dot"></span><span>imcoty</span></div>
-                <div class="coty-rank"><span id="cTier">MASTER</span><span class="d" id="cDiv"></span></div>
-                <div class="coty-rp">
-                  <span id="cRp">0</span><span class="u">RP</span>
-                  <span class="n" id="cNeeded"></span>
+    <div class="compare">
+      <div class="compare-cell">
+        <span class="compare-label">Stock overlay — <b>what everyone gets</b></span>
+        <div class="overlay-scale" id="s2Scale">
+          <div class="overlay-shell" id="s2Shell">
+            <div class="frame show">
+              <div class="widget" id="s2Widget">
+                <div class="rail"></div>
+                <span class="corner tr"></span>
+                <span class="corner bl"></span>
+                <div class="badge"><img id="s2Img" src="" alt=""></div>
+                <div class="info">
+                  <div class="player"><span class="dot"></span><span>imcoty</span></div>
+                  <div class="rank-name">
+                    <span id="s2Tier">MASTER</span><span class="div" id="s2Div"></span>
+                  </div>
+                  <div class="rp-line">
+                    <div class="rp-current">
+                      <span id="s2Rp">0</span><span class="unit">RP</span>
+                    </div>
+                    <div class="rp-needed" id="s2Needed"></div>
+                  </div>
+                  <div class="bar">
+                    <div class="bar-fill" id="s2Bar"></div>
+                    <div class="bar-ticks"></div>
+                  </div>
                 </div>
-                <div class="coty-bar"><div class="coty-fill" id="cBar"></div></div>
               </div>
             </div>
           </div>
         </div>
       </div>
-      <p class="caption">
-        The same live rank data, wearing the streamer's branding instead of mine —
-        their green, their corner brackets, their mark. Nothing of mine on screen.
-      </p>
+      <div class="compare-cell custom">
+        <span class="compare-label green">Custom build — <b>imcoty</b></span>
+        <div class="coty-scale" id="cScale">
+          <div class="coty-shell" id="cShell">
+            <div class="coty-frame">
+              <span class="coty-corner tl"></span>
+              <span class="coty-corner tr"></span>
+              <span class="coty-corner bl"></span>
+              <span class="coty-corner br"></span>
+              <span class="coty-mark">C</span>
+              <svg class="coty-leaf a" viewBox="0 0 28 30" aria-hidden="true"><path d="M3 29C1 17 7 6 25 1c2 13-5 24-22 28z"/></svg>
+              <svg class="coty-leaf b" viewBox="0 0 28 30" aria-hidden="true"><path d="M3 29C1 17 7 6 25 1c2 13-5 24-22 28z"/></svg>
+              <svg class="coty-leaf c" viewBox="0 0 28 30" aria-hidden="true"><path d="M3 29C1 17 7 6 25 1c2 13-5 24-22 28z"/></svg>
+
+              <div class="coty-inner">
+                <div class="coty-badge"><img id="cImg" src="" alt=""></div>
+                <div class="coty-info">
+                  <div class="coty-player"><span class="coty-dot"></span><span>imcoty</span></div>
+                  <div class="coty-rank"><span id="cTier">MASTER</span><span class="d" id="cDiv"></span></div>
+                  <div class="coty-rp">
+                    <span id="cRp">0</span><span class="u">RP</span>
+                    <span class="n" id="cNeeded"></span>
+                  </div>
+                  <div class="coty-bar"><div class="coty-fill" id="cBar"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <p class="compare-caption">
+      The same file, the same live rank, running side by side. The only thing that
+      changes is whose brand it wears — and on a custom build, the frame holds your
+      colour instead of shifting with the tier.
+    </p>
 
     <div class="btn-row" style="margin-top:22px">
       <a class="btn primary" href="mailto:svoid37@svoidsapexfx.com?subject=Custom%20overlay%20quote&amp;body=Channel%20link%3A%0AWhat%20I%20already%20have%20%28frame%2C%20icons%2C%20logo%2C%20colours%29%3A%0AWhat%20I%27m%20after%3A%0AWhen%20I%20need%20it%3A%0A">Request a quote</a>
@@ -1522,6 +1602,7 @@ img.addEventListener("load",  () => { img.style.visibility = "visible"; });
    the demo is pixel-for-pixel the real overlay at any screen width. */
 function fit() {
   scaleTo($("oScale"), shell);
+  scaleTo($("s2Scale"), $("s2Shell"));
   scaleTo($("cScale"), $("cShell"));
 }
 
@@ -1570,8 +1651,23 @@ function paint(gain) {
     $("wBar").style.width = Math.round(p.into * 100) + "%";
   }
 
-  /* The custom-build example rides the same data, but keeps its own colours —
-     on a commissioned overlay the streamer's branding is the whole point. */
+  /* The comparison pair rides the same data. The stock clone re-themes with the
+     tier like the hero does; the custom build keeps its own colours, because on a
+     commissioned overlay the streamer's branding is the whole point. */
+  if ($("s2Tier")) {
+    const sc2 = $("s2Shell").style;
+    sc2.setProperty("--accent", bright);
+    sc2.setProperty("--accent-rgb", hexToRgb(bright));
+    sc2.setProperty("--accent-lt", lighten(bright, .35));
+    sc2.setProperty("--accent-dim", dim);
+    $("s2Tier").textContent = $("wTier").textContent;
+    $("s2Div").textContent  = $("wDiv").textContent;
+    $("s2Rp").textContent   = rp.toLocaleString();
+    $("s2Needed").innerHTML = $("wNeeded").innerHTML;
+    $("s2Bar").style.width  = $("wBar").style.width;
+    if ($("s2Img").getAttribute("src") !== url) $("s2Img").src = url;
+  }
+
   if ($("cTier")) {
     $("cTier").textContent = $("wTier").textContent;
     $("cDiv").textContent  = $("wDiv").textContent;
