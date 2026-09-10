@@ -256,6 +256,12 @@ h1, h2, h3 {
   border: 1px solid rgba(var(--accent-rgb) / .4);
   transition: background .7s ease, border-color .7s ease;
 }
+.badge img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 8px rgba(0,0,0,.65));
+}
 .badge .glyph {
   font-family: var(--display);
   font-size: 34px;
@@ -531,9 +537,12 @@ footer a { color: var(--text-3); }
       <div class="demo-stage">
         <span class="tag">Live demo</span>
         <div class="widget" id="w">
-          <div class="badge"><span class="glyph" id="wGlyph">G</span></div>
+          <div class="badge">
+            <img id="wImg" src="" alt="">
+            <span class="glyph" id="wGlyph" hidden>G</span>
+          </div>
           <div>
-            <div class="player"><span class="dot"></span><span>svoid</span></div>
+            <div class="player"><span class="dot"></span><span>imcoty</span></div>
             <div class="rank-name"><span id="wTier">GOLD</span><span class="div" id="wDiv">III</span></div>
             <div class="rp-line">
               <div class="rp-current">
@@ -797,7 +806,7 @@ const TIERS = [
   { name: "Master",   start: 16000, steps: [],                       glyph: "M" }
 ];
 
-/* [bright, dim] per tier — the palette the whole page borrows from */
+/* [bright, dim] per tier — the palette the demo widget borrows from */
 const TIER_COLORS = {
   rookie:   ["#9aa2ab", "#5c636b"],
   bronze:   ["#d08a45", "#8a5522"],
@@ -805,8 +814,28 @@ const TIER_COLORS = {
   gold:     ["#f5c451", "#a8792a"],
   platinum: ["#49d6c8", "#1d7d78"],
   diamond:  ["#5aa9ff", "#2360a8"],
-  master:   ["#b061ff", "#5f2a9c"]
+  master:   ["#b061ff", "#5f2a9c"],
+  predator: ["#ff3b30", "#8f1d1e"]
 };
+
+/* Badge art, served by the same stats API the overlay itself reads.
+   Rookie->Diamond are <tier><division>; Master and Predator have no
+   divisions and are a single file each. If the CDN ever fails, the
+   onerror handler below falls back to the letter glyph rather than
+   leaving a hole in the widget. */
+const RANK_CDN = "https://api.mozambiquehe.re/assets/ranks/";
+function badgeUrl(tierName, div) {
+  const t = tierName.toLowerCase();
+  if (t === "apex predator") return RANK_CDN + "apexpredator1.png";
+  if (t === "master")        return RANK_CDN + "master1.png";
+  return RANK_CDN + t + div + ".png";
+}
+
+/* Demo-only: the RP at which this account crosses into Predator, and how
+   many players sit on the ladder when it does. The real overlay reads the
+   live cutoff from the API; here it is a plausible fixed number. */
+const PRED_CUTOFF = 19000;
+const LADDER_TOP  = 750;
 
 const ROMAN = { 1: "I", 2: "II", 3: "III", 4: "IV" };
 const $ = id => document.getElementById(id);
@@ -818,8 +847,13 @@ function place(rp) {
   for (let t = 0; t < TIERS.length; t++) if (rp >= TIERS[t].start) i = t;
   const tier = TIERS[i];
 
-  if (!tier.steps.length) {                       // Master and above
-    return { tier, div: 0, into: 1, needed: 0, next: null };
+  if (!tier.steps.length) {                       // Master: no divisions
+    return {
+      tier, div: 0,
+      into: Math.min(1, (rp - tier.start) / (PRED_CUTOFF - tier.start)),
+      needed: Math.max(0, PRED_CUTOFF - rp),
+      next: "Predator"
+    };
   }
   let floor = tier.start;
   for (let d = 0; d < tier.steps.length; d++) {
@@ -853,17 +887,32 @@ function lighten(hex, amt) {
   return "#" + ch.map(c => c.toString(16).padStart(2, "0")).join("");
 }
 
-let rp = 5400;
-let lastTier = "";
+let rp        = 5400;
+let ladder    = null;   // null until Predator; then the worldwide position
+let holdTicks = 0;      // linger on #1 before starting the climb again
+let lastKey   = "";
+let lastBadge = "";
 const widget = $("w");
-const stage = document.querySelector(".demo-stage");
+const stage  = document.querySelector(".demo-stage");
+const img    = $("wImg");
+
+/* One bad response shouldn't leave an empty box on a sales page. */
+img.addEventListener("error", () => {
+  img.hidden = true;
+  $("wGlyph").hidden = false;
+});
+img.addEventListener("load", () => {
+  img.hidden = false;
+  $("wGlyph").hidden = true;
+});
 
 function paint(gain) {
+  const pred = ladder !== null;
   const p = place(rp);
-  const key = p.tier.name.toLowerCase();
+  const key = pred ? "predator" : p.tier.name.toLowerCase();
   const [bright, dim] = TIER_COLORS[key];
 
-  if (key !== lastTier) {                          // promoted — re-theme
+  if (key !== lastKey) {                           // promoted — re-theme
     /* Scoped to the demo stage on purpose. Letting the tier colour reach
        :root would drag the brand red off the buttons with it, and a grey
        Silver-tier call to action reads as disabled. */
@@ -872,17 +921,28 @@ function paint(gain) {
     scope.setProperty("--accent-rgb", hexToRgb(bright));
     scope.setProperty("--accent-lt", lighten(bright, .35));
     scope.setProperty("--accent-dim", dim);
-    lastTier = key;
-    $("wGlyph").textContent = p.tier.glyph;
+    lastKey = key;
+    $("wGlyph").textContent = pred ? "A" : p.tier.glyph;
   }
 
-  $("wTier").textContent = p.tier.name.toUpperCase();
-  $("wDiv").textContent  = p.div ? ROMAN[p.div] : "";
+  const url = pred ? badgeUrl("apex predator", 0) : badgeUrl(p.tier.name, p.div);
+  if (url !== lastBadge) { lastBadge = url; img.src = url; }
+
+  $("wTier").textContent = pred ? "APEX PREDATOR" : p.tier.name.toUpperCase();
+  $("wDiv").textContent  = (!pred && p.div) ? ROMAN[p.div] : "";
   $("wRp").textContent   = rp.toLocaleString();
-  $("wNeeded").textContent = p.next
-    ? p.needed.toLocaleString() + " RP to " + p.next
-    : "Apex Predator cutoff";
-  $("wBar").style.width = Math.round(p.into * 100) + "%";
+
+  if (pred) {
+    $("wNeeded").textContent = ladder === 1
+      ? "#1 worldwide"
+      : "#" + ladder.toLocaleString() + " worldwide";
+    /* Bar fills as the ladder position closes on first. */
+    $("wBar").style.width =
+      Math.round(((LADDER_TOP - ladder) / (LADDER_TOP - 1)) * 100) + "%";
+  } else {
+    $("wNeeded").textContent = p.needed.toLocaleString() + " RP to " + p.next;
+    $("wBar").style.width = Math.round(p.into * 100) + "%";
+  }
 
   if (gain) {
     const d = $("wDelta");
@@ -894,10 +954,34 @@ function paint(gain) {
   }
 }
 
+/* A plausible haul for one match: usually a modest placement, occasionally
+   a win with kills behind it. Keeps the demo from looking like a metronome. */
+function rpGain() {
+  const roll = Math.random();
+  if (roll < 0.12) return 10 + Math.floor(Math.random() * 25);   // early death
+  if (roll < 0.82) return 45 + Math.floor(Math.random() * 95);   // decent game
+  return 180 + Math.floor(Math.random() * 140);                  // won it
+}
+
 function tick() {
-  const gain = 40 + Math.floor(Math.random() * 90);
+  if (ladder === 1) {                    // sat at first — hold, then restart
+    if (++holdTicks < 4) { paint(0); return; }
+    rp = 1100; ladder = null; holdTicks = 0;
+    paint(0);
+    return;
+  }
+
+  const gain = rpGain();
   rp += gain;
-  if (rp > 17200) rp = 1100;                       // loop back to Bronze
+
+  if (ladder === null) {
+    if (rp >= PRED_CUTOFF) ladder = LADDER_TOP;   // broke into Predator
+  } else {
+    /* Climbing the ladder gets harder the closer to the top you are. */
+    const step = Math.max(1, Math.round(ladder * 0.16));
+    ladder = Math.max(1, ladder - step);
+  }
+
   paint(gain);
 }
 
