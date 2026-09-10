@@ -734,7 +734,8 @@ footer a { color: var(--text-3); }
           <a class="btn ghost" href="#next">What's coming</a>
         </div>
         <p class="under">
-          One file. No install, no background app, no account with us.
+          One file. No install, no background app, no account with us —
+          and <b>no logo of mine on your stream</b>.
         </p>
       </div>
 
@@ -792,6 +793,9 @@ footer a { color: var(--text-3); }
       <div>
         <h3>Apex Rank Overlay <span class="status live">Out now</span></h3>
         <ul class="feats">
+          <li><b>No watermark.</b> Most overlays put the seller's name or URL on your
+              stream and leave it there for every hour you broadcast. This one carries
+              nothing but your rank. It's the reason I built it in the first place.</li>
           <li><b>Live rank, division and RP</b>, refreshed once a minute.</li>
           <li><b>Exact RP to your next division</b> — no mental arithmetic mid-stream.</li>
           <li><b>Session +/- RP chip</b>, so viewers can see how the night is going.</li>
@@ -956,10 +960,11 @@ footer a { color: var(--text-3); }
         <p>Both work. They use the same browser source under the hood.</p>
       </details>
       <details>
-        <summary>Two accounts?</summary>
+        <summary>Multiple accounts?</summary>
         <p>
-          Run the setup guide twice. Each run builds its own file, named after that
-          player, so they can't overwrite each other. Add a browser source for each.
+          Run the setup guide once per account. Each run builds its own file, named
+          after that player, so they can't overwrite each other. Add a browser source
+          for each — there's no limit.
         </p>
       </details>
       <details>
@@ -974,6 +979,11 @@ footer a { color: var(--text-3); }
         <p>
           Yes — it's plain HTML and CSS, and modifying your copy for your own streams
           is explicitly allowed. Reselling it or passing it around isn't.
+        </p>
+        <p>
+          Mine is the branding that <em>isn't</em> there. Plenty of overlays sit on your
+          stream advertising the shop that sold them for as long as you're live. This one
+          shows your rank and nothing else — the space is yours to use or leave empty.
         </p>
       </details>
     </div>
@@ -1099,7 +1109,7 @@ function badgeUrl(tierName, div) {
 }
 
 const TICK_MS     = 3200;   /* one "match" — slow enough to read the count-up */
-const DEMO_FLOOR  = 15000;  /* Diamond I: where the loop starts and restarts  */
+const DEMO_FLOOR  = 14000;  /* Diamond II: where the loop starts and restarts */
 const PRED_CUTOFF = 19000;  /* demo-only; the product reads the live cutoff   */
 const LADDER_TOP  = 750;
 
