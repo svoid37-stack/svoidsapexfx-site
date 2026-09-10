@@ -653,6 +653,33 @@ section { padding: 74px 0; border-bottom: 1px solid var(--line-soft); }
     linear-gradient(rgba(10,12,15,.5), rgba(10,12,15,.72)),
     repeating-linear-gradient(115deg, #16211b 0 12px, #121a15 12px 24px);
 }
+.custom-buy {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+  padding: 18px 22px;
+  border: 1px solid #1f6b45;
+  border-radius: 4px;
+  background: linear-gradient(140deg, rgba(22,33,27,.9), rgba(18,26,21,.9));
+}
+.custom-price {
+  font-family: var(--display);
+  font-size: 42px;
+  line-height: 1;
+  color: var(--text);
+}
+.custom-price small {
+  display: block;
+  margin-top: 5px;
+  font-family: var(--ui);
+  font-size: 12px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #8fd9b0;
+}
+
 .compare-caption {
   margin-top: 16px;
   font-size: 12.5px;
@@ -847,6 +874,46 @@ section { padding: 74px 0; border-bottom: 1px solid var(--line-soft); }
 }
 .coty-rp .n b { color: var(--coty); font-size: 14px; }
 
+/* The bar grows like a plant: each sprout opens as the fill passes it, so
+   the vine creeps outward along the track as RP climbs. Sprouts alternate
+   above and below and are staggered slightly so it reads organic rather
+   than like a row of ticks. */
+.coty-vine {
+  position: absolute;
+  inset: -20px 0;
+  pointer-events: none;
+  overflow: visible;
+}
+.coty-sprout {
+  position: absolute;
+  top: 50%;
+  width: 0; height: 0;
+  opacity: 0;
+  transform: scale(.2) rotate(-8deg);
+  transform-origin: bottom center;
+  transition: opacity .5s ease, transform .65s cubic-bezier(.34,1.4,.5,1);
+}
+.coty-sprout.on { opacity: 1; transform: scale(1) rotate(0deg); }
+
+.coty-stem {
+  position: absolute;
+  left: 0; bottom: 0;
+  width: 1.5px;
+  background: linear-gradient(var(--coty-lt), var(--coty));
+  box-shadow: 0 0 4px rgba(61,220,132,.7);
+  border-radius: 2px;
+}
+.coty-sprout svg {
+  position: absolute;
+  fill: var(--coty);
+  filter: drop-shadow(0 0 3px rgba(61,220,132,.65));
+}
+/* upward sprouts sit above the track, downward ones below */
+.coty-sprout.up   { transform-origin: bottom center; }
+.coty-sprout.down { transform-origin: top center; }
+.coty-sprout.down { transform: scale(.2) rotate(8deg); }
+.coty-sprout.down.on { transform: scale(1) rotate(0deg); }
+
 .coty-bar {
   position: relative;
   height: 8px;
@@ -854,6 +921,11 @@ section { padding: 74px 0; border-bottom: 1px solid var(--line-soft); }
   border-radius: 5px;
   background: rgba(0,0,0,.5);
   border: 1px solid rgba(61,220,132,.28);
+}
+.coty-bar .coty-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 5px;
   overflow: hidden;
 }
 .coty-fill {
@@ -1184,7 +1256,10 @@ footer a { color: var(--text-3); }
                     <span id="cRp">0</span><span class="u">RP</span>
                     <span class="n" id="cNeeded"></span>
                   </div>
-                  <div class="coty-bar"><div class="coty-fill" id="cBar"></div></div>
+                  <div class="coty-bar">
+                    <div class="coty-track"><div class="coty-fill" id="cBar"></div></div>
+                    <div class="coty-vine" id="cVine"></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1199,13 +1274,19 @@ footer a { color: var(--text-3); }
       colour instead of shifting with the tier.
     </p>
 
-    <div class="btn-row" style="margin-top:22px">
-      <a class="btn primary" href="mailto:svoid37@svoidsapexfx.com?subject=Custom%20overlay%20quote&amp;body=Channel%20link%3A%0AWhat%20I%20already%20have%20%28frame%2C%20icons%2C%20logo%2C%20colours%29%3A%0AWhat%20I%27m%20after%3A%0AWhen%20I%20need%20it%3A%0A">Request a quote</a>
+    <div class="custom-buy">
+      <div class="custom-price">$15.99<small>one-time · 1&ndash;3 business days</small></div>
+      <a class="btn primary" href="https://buy.stripe.com/7sY8wQ9WucP59Gv0Dm6EU01">Order a custom frame</a>
+    </div>
+
+    <div class="btn-row" style="margin-top:14px">
+      <a class="btn ghost" href="mailto:svoid37@svoidsapexfx.com?subject=Custom%20overlay%20quote&amp;body=Channel%20link%3A%0AWhat%20I%20already%20have%20%28frame%2C%20icons%2C%20logo%2C%20colours%29%3A%0AWhat%20I%27m%20after%3A%0AWhen%20I%20need%20it%3A%0A">Ask about a bigger job</a>
     </div>
 
     <p class="fineprint">
-      <b>Quoted per job</b>, because scope varies — a cam frame is not the same work as a
-      full scene set. Tell me what you want and you'll get a price before anything starts.
+      <b>$15.99 covers one custom frame</b> built around branding you already have. Bigger
+      jobs — a full scene set, several scenes, animation — are quoted separately, so ask
+      first and you'll have a price before anything starts.
     </p>
   </div>
 </section>
@@ -1664,12 +1745,15 @@ function paint(gain) {
     if ($("s2Img").getAttribute("src") !== url) $("s2Img").src = url;
   }
 
+  if ($("cVine") && !$("cVine").dataset.built) buildVine();
+
   if ($("cTier")) {
     $("cTier").textContent = $("wTier").textContent;
     $("cDiv").textContent  = $("wDiv").textContent;
     $("cRp").textContent   = rp.toLocaleString();
     $("cNeeded").innerHTML = $("wNeeded").innerHTML;
     $("cBar").style.width  = $("wBar").style.width;
+    growVine(parseFloat($("wBar").style.width) || 0);
     if ($("cImg").getAttribute("src") !== url) $("cImg").src = url;
   }
 
@@ -1682,6 +1766,64 @@ function paint(gain) {
     widget.classList.add("flash");
     setTimeout(() => d.classList.remove("on"), 2400);
   }
+}
+
+/* Build the vine once: a run of sprouts along the bar, alternating above and
+   below, each a stem plus one or two leaves. Sizes and angles vary so it does
+   not read as a repeating pattern. */
+function buildVine() {
+  const vine = $("cVine");
+  vine.dataset.built = "1";
+  const SPROUTS = [
+    { at:  6, up: true,  stem: 13, leaf: 11, tilt: -28 },
+    { at: 14, up: false, stem: 10, leaf:  9, tilt:  24 },
+    { at: 23, up: true,  stem: 17, leaf: 13, tilt: -16 },
+    { at: 32, up: false, stem: 13, leaf: 11, tilt:  32 },
+    { at: 41, up: true,  stem: 12, leaf: 10, tilt: -36 },
+    { at: 50, up: true,  stem: 20, leaf: 14, tilt:  -8 },
+    { at: 59, up: false, stem: 15, leaf: 12, tilt:  20 },
+    { at: 68, up: true,  stem: 14, leaf: 11, tilt: -30 },
+    { at: 77, up: false, stem: 11, leaf: 10, tilt:  28 },
+    { at: 86, up: true,  stem: 19, leaf: 14, tilt: -14 },
+    { at: 94, up: false, stem: 13, leaf: 11, tilt:  22 }
+  ];
+
+  SPROUTS.forEach(sp => {
+    const el = document.createElement("span");
+    el.className = "coty-sprout " + (sp.up ? "up" : "down");
+    el.style.left = sp.at + "%";
+    el.dataset.at = sp.at;
+
+    const stem = document.createElement("span");
+    stem.className = "coty-stem";
+    stem.style.height = sp.stem + "px";
+    stem.style.bottom = sp.up ? "0" : "auto";
+    stem.style.top = sp.up ? "auto" : "0";
+    el.appendChild(stem);
+
+    const leaf = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    leaf.setAttribute("viewBox", "0 0 28 30");
+    leaf.style.width = sp.leaf + "px";
+    leaf.style.left = "-1px";
+    leaf.style[sp.up ? "bottom" : "top"] = (sp.stem - 3) + "px";
+    leaf.style.transform = "rotate(" + (sp.up ? sp.tilt : 180 - sp.tilt) + "deg)";
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", "M3 29C1 17 7 6 25 1c2 13-5 24-22 28z");
+    leaf.appendChild(path);
+    el.appendChild(leaf);
+
+    vine.appendChild(el);
+  });
+}
+
+/* Open every sprout the fill has reached, close the ones it hasn't — so the
+   plant grows back down again when the demo loops. */
+function growVine(pct) {
+  const vine = $("cVine");
+  if (!vine) return;
+  [...vine.children].forEach(el => {
+    el.classList.toggle("on", pct >= Number(el.dataset.at));
+  });
 }
 
 /* One match's haul. Wide spread so the widget never ticks like a metronome. */

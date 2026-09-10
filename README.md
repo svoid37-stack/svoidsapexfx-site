@@ -25,7 +25,7 @@ Turn on **Enforce HTTPS** in Settings → Pages once the certificate is issued.
 
 ## Before this goes live
 
-- [x] Set the price — $7.99
+- [x] Set the prices — $7.99 overlay, $15.99 custom frame
 - [x] Buy button wired to the Stripe payment link
 - [x] Contact address — svoid37@svoidsapexfx.com
 
