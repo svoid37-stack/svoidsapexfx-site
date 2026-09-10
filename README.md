@@ -27,7 +27,7 @@ Turn on **Enforce HTTPS** in Settings → Pages once the certificate is issued.
 
 - [x] Set the price — $7.99
 - [ ] Wire the Get the overlay button to the store checkout (`#buyBtn`)
-- [ ] Confirm the contact address exists on the Workspace account
+- [x] Contact address — svoid37@svoidsapexfx.com
 
 ## Promo codes
 
